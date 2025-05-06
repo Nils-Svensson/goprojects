@@ -65,7 +65,7 @@ var auditCmd = &cobra.Command{
 			for _, e := range allErrors {
 				fmt.Println("-", e)
 			}
-			os.Exit(1) // Optional: decide if non-zero exit is appropriate here
+			os.Exit(1) // Exit with error if any check failed
 		}
 
 	},
