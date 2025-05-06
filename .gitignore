@@ -1,0 +1,95 @@
+# === GO related ===
+/bin/
+/vendor/
+/coverage.out
+*.test
+*.exe
+*.out
+*.log
+*.prof
+*.mod
+
+# Build artifacts
+*.a
+*.o
+
+# Module cache (if you vendored deps)
+go.sum
+go.work.sum
+
+# === Python related ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.eggs/
+*.env
+*.venv
+.venv/
+.env/
+.envrc
+pip-log.txt
+
+# === VS Code and MacOS system files ===
+.vscode/
+.DS_Store
+
+# === Kubernetes YAMLs (optional) ===
+*.yaml
+*.yml
+
+# === Test outputs / reports ===
+audit_report.json
+audit_report.yaml
+
+# === Git related ===
+*.swp
+*~
+# === GO related ===
+/bin/
+/vendor/
+/coverage.out
+*.test
+*.exe
+*.out
+*.log
+*.prof
+*.mod
+
+# Build artifacts
+*.a
+*.o
+
+# Module cache (if you vendored deps)
+go.sum
+go.work.sum
+
+# === Python related ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.eggs/
+*.env
+*.venv
+.venv/
+.env/
+.envrc
+pip-log.txt
+
+# === VS Code and MacOS system files ===
+.vscode/
+.DS_Store
+
+# === Kubernetes YAMLs (optional) ===
+*.yaml
+*.yml
+*.json
+
+# === Git related ===
+*.swp
+*~
+
+*Dockerfile

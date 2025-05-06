@@ -1,7 +1,7 @@
 package main
 
 import (
-	"goprojects/cmd"
+	"goprojects/cluster-auditor/cmd"
 )
 
 func main() {

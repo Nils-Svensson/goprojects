@@ -1,10 +1,24 @@
 package cmd
 
 import (
-	"goprojects/internal/k8s"
+	"fmt"
+	"goprojects/kube-tracking/internal/k8s"
+	"os"
 
 	"github.com/spf13/cobra"
 )
+
+var RootCmd = &cobra.Command{
+	Use:   "kube-tracking",
+	Short: "Track Kubernetes deployments, rollouts, and replica metrics",
+}
+
+func Execute() {
+	if err := RootCmd.Execute(); err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+}
 
 var (
 	namespace  string
@@ -36,6 +50,6 @@ func init() {
 	alertCmd.Flags().StringVarP(&deployment, "deployment", "d", "", "Deployment name (required)")
 	alertCmd.MarkFlagRequired("deployment")
 
-	rootCmd.AddCommand(trackCmd)
-	rootCmd.AddCommand(alertCmd)
+	RootCmd.AddCommand(trackCmd)
+	RootCmd.AddCommand(alertCmd)
 }
