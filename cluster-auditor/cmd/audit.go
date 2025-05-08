@@ -40,7 +40,10 @@ var auditCmd = &cobra.Command{
 		if err := auditor.DockerTagCheck(namespace); err != nil {
 			allErrors = append(allErrors, fmt.Errorf("docker tag check failed: %w", err))
 		}
-		// More checks will be added
+
+		if err := auditor.CheckHPAConflict(namespace); err != nil {
+			allErrors = append(allErrors, fmt.Errorf("HPA conflict check failed: %w", err))
+		}
 
 		if outputJSON {
 			if err := audit.OutputFindingsAsJSON(auditor.Findings, "audit_report.json"); err != nil {
@@ -67,7 +70,6 @@ var auditCmd = &cobra.Command{
 			}
 			os.Exit(1) // Exit with error if any check failed
 		}
-
 	},
 }
 

@@ -186,3 +186,65 @@ func (a *Auditor) CheckMissingReadinessProbes(namespace string) error {
 
 	return nil
 }
+
+func (a *Auditor) CheckHPAConflict(namespace string) error {
+	clientset, err := GetKubernetesClient()
+	if err != nil {
+		return fmt.Errorf("failed to get Kubernetes client: %w", err)
+	}
+
+	hpaList, err := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list HPAs: %w", err)
+	}
+	type targetKey struct {
+		kind string
+		name string
+	}
+	// Create a map to track HPA targets
+	hpaTargets := make(map[targetKey]struct{})
+	for _, hpa := range hpaList.Items {
+		key := targetKey{
+			kind: hpa.Spec.ScaleTargetRef.Kind,
+			name: hpa.Spec.ScaleTargetRef.Name,
+		}
+		hpaTargets[key] = struct{}{}
+	}
+
+	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list deployments: %w", err)
+	}
+
+	for _, deploy := range deployments.Items {
+		if _, ok := hpaTargets[targetKey{"Deployment", deploy.Name}]; ok && deploy.Spec.Replicas != nil {
+			a.AddFinding(Finding{
+				Namespace:  deploy.Namespace,
+				Resource:   deploy.Name,
+				Kind:       "Deployment",
+				Container:  "", // not container-specific
+				Issue:      "Deployment has spec.replicas set while an HPA targets it",
+				Suggestion: "Remove spec.replicas from the Deployment manifest when using HPA to avoid conflicts.",
+			})
+		}
+	}
+	statefulsets, err := clientset.AppsV1().StatefulSets(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list statefulsets: %w", err)
+	}
+
+	for _, state := range statefulsets.Items {
+		if _, ok := hpaTargets[targetKey{"Statefulset", state.Name}]; ok && state.Spec.Replicas != nil {
+			a.AddFinding(Finding{
+				Namespace:  state.Namespace,
+				Resource:   state.Name,
+				Kind:       "StatefulSet",
+				Container:  "", // not container-specific
+				Issue:      "StatefulSet has spec.replicas set while an HPA targets it",
+				Suggestion: "Remove spec.replicas from the StatefulSet manifest when using HPA to avoid conflicts.",
+			})
+		}
+
+	}
+	return nil
+}
