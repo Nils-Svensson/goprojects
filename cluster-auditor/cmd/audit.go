@@ -36,6 +36,8 @@ var auditCmd = &cobra.Command{
 			{"Docker tag check", auditor.DockerTagCheck},
 			{"HPA conflict check", auditor.CheckHPAConflict},
 			{"NetworkPolicy check", auditor.CheckMissingNetworkPolicy},
+			{"PortConflict check", auditor.CheckPortTargetConflicts},
+			{"PVCcheck", auditor.PVCcheck},
 		}
 		for _, check := range checks {
 			err := check.fn(namespace)
