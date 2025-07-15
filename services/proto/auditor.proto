@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package auditor;
+
+option go_package = "services/generated/auditorpb";
+
+message Empty {}
+
+message HealthScore {
+  float score = 1;
+  string status = 2;
+}
+
+message Finding {
+  string namespace = 1;
+  string resource = 2;
+  string kind = 3;
+  string container = 4;
+  string issue = 5;
+  string suggestion = 6;
+}
+
+message FindingsResponse {
+  repeated Finding findings = 1;
+}
+
+service ClusterAuditor {
+  rpc GetHealthScore(Empty) returns (HealthScore);
+  rpc GetFindings(Empty) returns (FindingsResponse);
+}

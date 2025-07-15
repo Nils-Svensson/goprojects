@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 
+	"goprojects/findings"
+
 	"gopkg.in/yaml.v3"
 )
 
-func OutputFindingsAsJSON(findings []Finding, filename string) error {
-	data, err := json.MarshalIndent(findings, "", "  ")
+func OutputFindingsAsJSON(findingsList []findings.Finding, filename string) error {
+	data, err := json.MarshalIndent(findingsList, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal findings: %w", err)
 	}
@@ -22,8 +24,8 @@ func OutputFindingsAsJSON(findings []Finding, filename string) error {
 	return nil
 }
 
-func OutputFindingsAsYAML(findings []Finding, filename string) error {
-	data, err := yaml.Marshal(findings)
+func OutputFindingsAsYAML(findingsList []findings.Finding, filename string) error {
+	data, err := yaml.Marshal(findingsList)
 	if err != nil {
 		return fmt.Errorf("failed to marshal findings: %w", err)
 	}

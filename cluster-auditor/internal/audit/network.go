@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"goprojects/findings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (a *Auditor) CheckMissingNetworkPolicy(namespace string) error {
+func CheckMissingNetworkPolicy(a *findings.Auditor, namespace string) error {
 	clientset, err := GetKubernetesClient()
 	if err != nil {
 		return fmt.Errorf("failed to get Kubernetes client: %w", err)
@@ -19,7 +21,7 @@ func (a *Auditor) CheckMissingNetworkPolicy(namespace string) error {
 	}
 
 	if len(networkPolicies.Items) == 0 {
-		a.AddFinding(Finding{
+		a.AddFindingWithFilter(findings.Finding{
 			Namespace:  namespace,
 			Resource:   namespace,
 			Kind:       "Namespace",
@@ -32,7 +34,7 @@ func (a *Auditor) CheckMissingNetworkPolicy(namespace string) error {
 	return nil
 }
 
-func (a *Auditor) CheckPortTargetConflicts(namespace string) error {
+func CheckPortTargetConflicts(a *findings.Auditor, namespace string) error {
 	clientset, err := GetKubernetesClient()
 	if err != nil {
 		return fmt.Errorf("failed to get Kubernetes client: %w", err)
@@ -59,7 +61,7 @@ func (a *Auditor) CheckPortTargetConflicts(namespace string) error {
 				protocol: string(p.Protocol),
 			}
 			if otherSvc, exists := seen[key]; exists {
-				a.AddFinding(Finding{
+				a.AddFinding(findings.Finding{
 					Namespace:  svc.Namespace,
 					Resource:   svc.Name,
 					Kind:       "Service",

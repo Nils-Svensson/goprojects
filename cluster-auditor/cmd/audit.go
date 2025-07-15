@@ -6,7 +6,11 @@ import (
 
 	"goprojects/cluster-auditor/internal/audit"
 
+	"goprojects/services/server"
+
 	"github.com/spf13/cobra"
+
+	"goprojects/findings"
 )
 
 var (
@@ -22,27 +26,43 @@ var auditCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Audit Kubernetes deployments for best practices",
 	Run: func(cmd *cobra.Command, args []string) {
-		auditor := audit.NewAuditor()
+
+		db, err := server.InitDB("audit.db")
+		if err != nil {
+			fmt.Println("Failed to init DB:", err)
+			os.Exit(1)
+		}
+		defer db.Close()
+
+		auditor := findings.NewAuditor()
 
 		var allErrors []error
 
 		checks := []struct {
 			name string
-			fn   func(string) error
+			fn   func(*findings.Auditor, string) error
 		}{
-			{"MissingResourceLimits", auditor.CheckMissingResourceLimits},
-			{"MissingReadinessProbes", auditor.CheckMissingReadinessProbes},
-			{"MissingLivenessProbes", auditor.CheckMissingLivenessProbes},
-			{"Docker tag check", auditor.DockerTagCheck},
-			{"HPA conflict check", auditor.CheckHPAConflict},
-			{"NetworkPolicy check", auditor.CheckMissingNetworkPolicy},
-			{"PortConflict check", auditor.CheckPortTargetConflicts},
-			{"PVCcheck", auditor.PVCcheck},
+			{"MissingResourceLimits", audit.CheckMissingResourceLimits},
+			{"MissingReadinessProbes", audit.CheckMissingReadinessProbes},
+			{"MissingLivenessProbes", audit.CheckMissingLivenessProbes},
+			{"Docker tag check", audit.DockerTagCheck},
+			{"HPA conflict check", audit.CheckHPAConflict},
+			{"NetworkPolicy check", audit.CheckMissingNetworkPolicy},
+			{"PortConflict check", audit.CheckPortTargetConflicts},
+			{"PVCcheck", audit.PVCcheck},
+			{"UnclaimedPV", audit.UnclaimedPV},
 		}
 		for _, check := range checks {
-			err := check.fn(namespace)
+			err := check.fn(auditor, namespace)
 			if err != nil {
 				allErrors = append(allErrors, fmt.Errorf("check %s failed: %w", check.name, err))
+			}
+		}
+
+		for _, f := range auditor.Findings {
+			err := server.InsertFinding(db, f)
+			if err != nil {
+				fmt.Printf("Failed to insert finding into DB: %v\n", err)
 			}
 		}
 

@@ -3,12 +3,15 @@ package audit
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"goprojects/findings"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (a *Auditor) PVCcheck(namespace string) error {
+func PVCcheck(a *findings.Auditor, namespace string) error {
 	clientset, err := GetKubernetesClient()
 	if err != nil {
 		return fmt.Errorf("failed to get Kubernetes client: %w", err)
@@ -22,7 +25,7 @@ func (a *Auditor) PVCcheck(namespace string) error {
 	for _, pvc := range pvcs.Items {
 		switch pvc.Status.Phase {
 		case v1.ClaimPending:
-			a.AddFinding(Finding{
+			a.AddFinding(findings.Finding{
 				Namespace:  pvc.Namespace,
 				Resource:   pvc.Name,
 				Kind:       "PersistentVolumeClaim",
@@ -31,7 +34,7 @@ func (a *Auditor) PVCcheck(namespace string) error {
 				Suggestion: "Check if the PersistentVolumeClaim has a matching PersistentVolume or if there are issues with the storage class.",
 			})
 		case v1.ClaimLost:
-			a.AddFinding(Finding{
+			a.AddFinding(findings.Finding{
 				Namespace:  pvc.Namespace,
 				Resource:   pvc.Name,
 				Kind:       "PersistentVolumeClaim",
@@ -42,5 +45,35 @@ func (a *Auditor) PVCcheck(namespace string) error {
 		}
 	}
 
+	return nil
+}
+
+func UnclaimedPV(a *findings.Auditor, namespace string) error {
+	clientset, err := GetKubernetesClient()
+	if err != nil {
+		return fmt.Errorf("failed to get Kubernetes client: %w", err)
+	}
+
+	pvs, err := clientset.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list persistent volumes: %w", err)
+	}
+
+	for _, pv := range pvs.Items {
+		if pv.Status.Phase == v1.VolumeAvailable {
+			age := time.Since(pv.CreationTimestamp.Time)
+
+			if age >= 24*time.Hour {
+				a.AddFinding(findings.Finding{
+					Namespace:  "", // PersistentVolumes are cluster-wide resources
+					Resource:   pv.Name,
+					Kind:       "PersistentVolume",
+					Container:  "",
+					Issue:      fmt.Sprintf("PersistentVolume has been unclaimed and available for %s", age.Round(time.Hour)),
+					Suggestion: "Consider deleting or reusing this PersistentVolume if it is no longer needed.",
+				})
+			}
+		}
+	}
 	return nil
 }
