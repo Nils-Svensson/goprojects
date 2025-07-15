@@ -1,20 +1,8 @@
 package findings
 
-type Resources struct {
-	Deployments              int
-	StatefulSets             int
-	DaemonSets               int
-	ReplicaSets              int
-	Pods                     int
-	Services                 int
-	Namespaces               int
-	NetworkPolicies          int
-	HorizontalPodAutoscalers int
-	Secrets                  int
-	Nodes                    int
-}
+// Package findings provides structures and methods for managing audit findings
 
-// Will add severity field at some point
+// Will add context and severity field at some point
 type Finding struct {
 	Namespace  string
 	Resource   string
