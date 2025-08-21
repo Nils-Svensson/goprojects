@@ -3,14 +3,33 @@ package audit
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+func ListAllKubeContexts() ([]string, error) {
+	kubeconfig := os.Getenv("KUBECONFIG")
+	if kubeconfig == "" {
+		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	}
+
+	config, err := clientcmd.LoadFromFile(kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	var contexts []string
+	for name := range config.Contexts {
+		contexts = append(contexts, name)
+	}
+	return contexts, nil
+}
+
 // GetKubernetesClient initializes the client for interacting with the cluster
-func GetKubernetesClient() (*kubernetes.Clientset, error) {
+func GetKubernetesClient() (kubernetes.Interface, error) {
 	var config *rest.Config
 	var err error
 

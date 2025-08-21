@@ -9,6 +9,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 func getImageAndTag(image string) (string, string) {
@@ -19,13 +20,9 @@ func getImageAndTag(image string) (string, string) {
 	return parts[0], "latest"
 }
 
-func CheckMissingResourceLimits(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func CheckMissingResourceLimits(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	deployments, err := client.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
@@ -57,13 +54,9 @@ func CheckMissingResourceLimits(a *findings.Auditor, namespace string) error {
 	return nil
 }
 
-func DockerTagCheck(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func DockerTagCheck(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	deployments, err := client.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
@@ -87,13 +80,9 @@ func DockerTagCheck(a *findings.Auditor, namespace string) error {
 	return nil
 }
 
-func CheckMissingLivenessProbes(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func CheckMissingLivenessProbes(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	deployments, err := client.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
@@ -126,13 +115,9 @@ func CheckMissingLivenessProbes(a *findings.Auditor, namespace string) error {
 	return nil
 }
 
-func CheckMissingReadinessProbes(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func CheckMissingReadinessProbes(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	deployments, err := client.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
@@ -166,13 +151,9 @@ func CheckMissingReadinessProbes(a *findings.Auditor, namespace string) error {
 	return nil
 }
 
-func CheckHPAConflict(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func CheckHPAConflict(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	hpaList, err := clientset.AutoscalingV1().HorizontalPodAutoscalers(namespace).List(context.TODO(), metav1.ListOptions{})
+	hpaList, err := client.AutoscalingV1().HorizontalPodAutoscalers(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list HPAs: %w", err)
 	}
@@ -187,10 +168,11 @@ func CheckHPAConflict(a *findings.Auditor, namespace string) error {
 			kind: hpa.Spec.ScaleTargetRef.Kind,
 			name: hpa.Spec.ScaleTargetRef.Name,
 		}
-		hpaTargets[key] = struct{}{}
+		hpaTargets[key] = struct{}{} //same as hpaTargets[key]=True if map is of form map[targetKey]bool, except that struct{}{}
+		// is more memory efficient (zero bytes).
 	}
 
-	deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	deployments, err := client.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list deployments: %w", err)
 	}
@@ -207,7 +189,7 @@ func CheckHPAConflict(a *findings.Auditor, namespace string) error {
 			})
 		}
 	}
-	statefulsets, err := clientset.AppsV1().StatefulSets(namespace).List(context.TODO(), metav1.ListOptions{})
+	statefulsets, err := client.AppsV1().StatefulSets(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list statefulsets: %w", err)
 	}

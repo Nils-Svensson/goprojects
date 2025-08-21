@@ -9,15 +9,12 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func PVCcheck(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func PVCcheck(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(namespace).List(context.TODO(), metav1.ListOptions{})
+	pvcs, err := client.CoreV1().PersistentVolumeClaims(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list persistent volume claims: %w", err)
 	}
@@ -48,13 +45,9 @@ func PVCcheck(a *findings.Auditor, namespace string) error {
 	return nil
 }
 
-func UnclaimedPV(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func UnclaimedPV(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	pvs, err := clientset.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
+	pvs, err := client.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list persistent volumes: %w", err)
 	}

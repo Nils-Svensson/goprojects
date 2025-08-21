@@ -9,6 +9,7 @@ import (
 	"goprojects/services/server"
 
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 
 	"goprojects/findings"
 )
@@ -36,11 +37,17 @@ var auditCmd = &cobra.Command{
 
 		auditor := findings.NewAuditor()
 
+		clientset, err := audit.GetKubernetesClient()
+		if err != nil {
+			fmt.Println("Failed to get Kubernetes client:", err)
+			os.Exit(1)
+		}
+
 		var allErrors []error
 
 		checks := []struct {
 			name string
-			fn   func(*findings.Auditor, string) error
+			fn   func(*findings.Auditor, kubernetes.Interface, string) error
 		}{
 			{"MissingResourceLimits", audit.CheckMissingResourceLimits},
 			{"MissingReadinessProbes", audit.CheckMissingReadinessProbes},
@@ -53,7 +60,7 @@ var auditCmd = &cobra.Command{
 			{"UnclaimedPV", audit.UnclaimedPV},
 		}
 		for _, check := range checks {
-			err := check.fn(auditor, namespace)
+			err := check.fn(auditor, clientset, namespace)
 			if err != nil {
 				allErrors = append(allErrors, fmt.Errorf("check %s failed: %w", check.name, err))
 			}

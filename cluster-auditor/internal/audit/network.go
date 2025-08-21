@@ -7,15 +7,12 @@ import (
 	"goprojects/findings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func CheckMissingNetworkPolicy(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func CheckMissingNetworkPolicy(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	networkPolicies, err := clientset.NetworkingV1().NetworkPolicies(namespace).List(context.TODO(), metav1.ListOptions{})
+	networkPolicies, err := client.NetworkingV1().NetworkPolicies(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list NetworkPolicies: %w", err)
 	}
@@ -34,13 +31,9 @@ func CheckMissingNetworkPolicy(a *findings.Auditor, namespace string) error {
 	return nil
 }
 
-func CheckPortTargetConflicts(a *findings.Auditor, namespace string) error {
-	clientset, err := GetKubernetesClient()
-	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes client: %w", err)
-	}
+func CheckPortTargetConflicts(a *findings.Auditor, client kubernetes.Interface, namespace string) error {
 
-	services, err := clientset.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
+	services, err := client.CoreV1().Services(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list Services: %w", err)
 	}
