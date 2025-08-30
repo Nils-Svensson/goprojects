@@ -24,6 +24,7 @@ func InitDB(path string) (*sql.DB, error) {
 		container TEXT,
 		issue TEXT,
 		suggestion TEXT,
+		subjects TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 	`
@@ -37,9 +38,9 @@ func InitDB(path string) (*sql.DB, error) {
 
 func InsertFinding(db *sql.DB, f findings.Finding) error {
 	_, err := db.Exec(`
-		INSERT INTO findings (namespace, resource, kind, container, issue, suggestion)
+		INSERT INTO findings (namespace, resource, kind, container, issue, suggestion, subjects)
 		VALUES (?, ?, ?, ?, ?, ?)`,
-		f.Namespace, f.Resource, f.Kind, f.Container, f.Issue, f.Suggestion,
+		f.Namespace, f.Resource, f.Kind, f.Container, f.Issue, f.Suggestion, f.Subjects,
 	)
 	return err
 }

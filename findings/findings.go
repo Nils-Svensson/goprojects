@@ -10,6 +10,7 @@ type Finding struct {
 	Container  string
 	Issue      string
 	Suggestion string
+	Subjects   []string // optional, e.g. for RBAC findings
 }
 
 type Auditor struct {
